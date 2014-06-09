@@ -12,9 +12,16 @@ ofxVLCVideoPlayer::~ofxVLCVideoPlayer(void)
     //closeMovie();
 }
 
-bool ofxVLCVideoPlayer::loadMovie(string name) {
+bool ofxVLCVideoPlayer::loadMovie(string name,bool assumeDataFolder) {
     closeMovie();
-    vlcMovieInstance = shared_ptr<VLCMovie>(new VLCMovie(ofToDataPath(name)));
+    if(assumeDataFolder){
+        ofLogNotice()<<"Loading: "<<ofToDataPath(name)<<endl;
+        vlcMovieInstance = shared_ptr<VLCMovie>(new VLCMovie(ofToDataPath(name)));
+    }else{
+        ofLogNotice()<<"Loading: "<<name<<endl;
+        vlcMovieInstance = shared_ptr<VLCMovie>(new VLCMovie(name));
+    }
+    
     vlcMovieInstance->init();
     bool result = vlcMovieInstance->getIsInitialized();
     if (!result) vlcMovieInstance.reset();
@@ -30,13 +37,23 @@ void ofxVLCVideoPlayer::closeMovie() {
 }
 
 void ofxVLCVideoPlayer::update() {
+    
+   
+    
     if (vlcMovieInstance) {
-        vlcMovieInstance->updateTexture();
+        
+        if(vlcMovieInstance->hasReadMetaData()){
+            vlcMovieInstance->updateTexture();
+        }else{
+            //dimensions not yet loaded
+            vlcMovieInstance->readMetaData();
+            
+        }
     }
 } 
 
 ofTexture &ofxVLCVideoPlayer::getTextureReference() {
-    if (vlcMovieInstance) {
+    if (vlcMovieInstance && vlcMovieInstance->hasReadMetaData()) {
         return vlcMovieInstance->getTexture();
     } else {
         return dummyTexture;
@@ -44,13 +61,13 @@ ofTexture &ofxVLCVideoPlayer::getTextureReference() {
 }
 
 void ofxVLCVideoPlayer::draw(float x, float y, float w, float h) {
-    if (vlcMovieInstance) {
+    if (vlcMovieInstance && vlcMovieInstance->hasReadMetaData()) {
         vlcMovieInstance->getTexture().draw(x, y, 0, w, h);
     }
 }
 
 void ofxVLCVideoPlayer::draw(float x, float y) {
-    if (vlcMovieInstance) {
+    if (vlcMovieInstance && vlcMovieInstance->hasReadMetaData()) {
         vlcMovieInstance->getTexture().draw(x, y);
     }
 }
@@ -119,7 +136,9 @@ bool ofxVLCVideoPlayer::isPlaying() {
 
 bool ofxVLCVideoPlayer::isLoaded() {
    if (vlcMovieInstance) {
-        return vlcMovieInstance->getIsInitialized();
+        //return vlcMovieInstance->getIsInitialized();
+       //borg
+       return vlcMovieInstance->hasReadMetaData();
    } else {
        return false;
    }

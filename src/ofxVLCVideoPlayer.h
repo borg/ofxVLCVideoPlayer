@@ -11,7 +11,7 @@ class ofxVLCVideoPlayer
 public:
     ofxVLCVideoPlayer(void);
     ~ofxVLCVideoPlayer(void);
-    bool loadMovie(string name);
+    bool loadMovie(string name,bool assumeDataFolder = true);
     void closeMovie();
     void update();
     ofTexture &getTextureReference();
@@ -38,5 +38,8 @@ public:
     int getTotalNumFrames();
     void setVolume(int volume);
     void toggleMute();
+    
+    
+
 };
 

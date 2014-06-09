@@ -24,6 +24,9 @@ class VLCMovie
     bool isInitialized;
     bool isVLCInitialized;
 
+    
+
+    
     int videoWidth, videoHeight;
     float fps;
 	libvlc_time_t video_length_ms;
@@ -102,7 +105,10 @@ public:
     int getCurrentFrame();
     void setVolume(int volume);
     void toggleMute();
-
+    
+    //borg
+    void readMetaData();
+    bool hasReadMetaData();
     //ofSoundStream soundStream;
     //SoundBuffer soundBuffer;
     //virtual void audioOut(float *output, int bufferSize, int channels);

@@ -1,7 +1,8 @@
 #define _WIN32_WINNT 0x0500
 #include "VLCMovie.h"
 #include <lib/media_internal.h>
-#include <vlc/plugins/vlc_input_item.h>
+//#include <vlc/plugins/vlc_input_item.h>
+#include <include/vlc_input_item.h>
 
 //VLCMovie::VLCMovie(string filename) : filename(filename), frontImage(&image[1]), backImage(&image[0]), isFliped(true), isLooping(true), movieFinished(false), soundBuffer(2048 * 320), isInitialized(false) {
 VLCMovie::VLCMovie(string filename) : filename(filename), frontImage(&image[1]), backImage(&image[0]), isFliped(true), isLooping(true), movieFinished(false), isInitialized(false), isVLCInitialized(false), isThumbnailOK(false), frontTexture(NULL) {
@@ -14,17 +15,28 @@ VLCMovie::~VLCMovie(void)
 	cleanupVLC();
 }
 
+bool VLCMovie::hasReadMetaData(){
+    return (videoWidth>0);
+};
+
 void VLCMovie::init() {
+    
+    
     if (isInitialized) return;
 
+    cout<<"VLCMovie::init"<<endl;
     initializeVLC();
     if (!isVLCInitialized) return;
+    
+    if(hasReadMetaData()){
+        
+        for (int i = 0; i < 2 ; i++) {
+            image[i].allocate(videoWidth, videoHeight, OF_IMAGE_COLOR_ALPHA);
+        }
 
-    for (int i = 0; i < 2; i++) {
-        image[i].allocate(videoWidth, videoHeight, OF_IMAGE_COLOR_ALPHA);
+        
     }
-
-	frontTexture = &frontImage->getTextureReference();
+    frontTexture = &frontImage->getTextureReference();
     isInitialized = true;
 }
 
@@ -56,7 +68,9 @@ void VLCMovie::initializeVLC() {
     // *** if you want to change how to output audio, please change setting below
     // *** you can get appreciate audio output name by libvlc_audio_output_list_get (code wrote and commented-out 10 lines above)
     // libvlc_audio_output_set(mp, "adummy"); // audio output to buffer (need to setup callbacks with libvlc_audio_set_callbacks)
-    libvc_audio_output_set(mp, "waveout"); // audio output to MME Wave Out
+    
+    //borg commented out
+    //libvc_audio_output_set(mp, "waveout"); // audio output to MME Wave Out
     // libvlc_audio_output_set(mp, "aout_directx"); // audio output with Direct X
     
 
@@ -79,54 +93,168 @@ void VLCMovie::initializeVLC() {
   //  libvlc_media_player_set_position(mp, 0);
 
     libvlc_media_parse(m);
-    videoWidth = libvlc_video_get_width(mp);
-    videoHeight = libvlc_video_get_height(mp);
-    video_length_ms = libvlc_media_get_duration(m);
-    cout << video_length_ms << endl;
+    
+    
+    
+    
+    unsigned int num = 0;
+    unsigned int px=0;
+    unsigned int py=0;
+    libvlc_video_get_size(mp,num,&px,&py);
+    
+    //videoWidth = libvlc_video_get_width(mp);
+    //videoHeight = libvlc_video_get_height(mp);
+    
+    videoWidth = px;
+    videoHeight = py;
 
-	cout << "Video: (" << videoWidth << ", " << videoHeight << ")" << endl;
-
+    
+    //this seems to lock window inside ofGL context
     libvlc_video_set_callbacks(mp, lockForThumbnailStatic, unlockForThumbnailStatic, displayForThumbnailStatic, this);
-    libvlc_video_set_format(mp, "RGBA", videoWidth, videoHeight, videoWidth * 4);
-
-	thumbnailImage.allocate(videoWidth, videoHeight, OF_IMAGE_COLOR_ALPHA);
-
-    libvlc_media_player_play(mp);
-	while (!isThumbnailOK) {
-        Sleep(100);
-    }
-    libvlc_media_player_stop(mp);
-    libvlc_media_player_set_position(mp, 0);
-	thumbnailImage.reloadTexture();
-
-	cout << "Created Thumbnail" << endl;
-	cout << "Video:length " << video_length_ms << "(ms)" << endl;
-
-    libvlc_audio_output_set(mp, "aout_directx");
-    libvlc_video_set_callbacks(mp, lockStatic, unlockStatic, displayStatic, this);
-    libvlc_video_set_format(mp, "RGBA", videoWidth, videoHeight, videoWidth * 4);
+    //libvlc_media_player_play(mp);
     
-    //libvlc_audio_set_callbacks(mp, playStatic, pauseStatic, resumeStatic, flushStatic, drainStatic, this);
-    //libvlc_audio_set_format_callbacks(mp, setupStatic, cleanupStatic);
+    if(videoWidth>0){
+        
+        video_length_ms = libvlc_media_get_duration(m);
+        
 
-    eventManager = libvlc_media_player_event_manager(mp);
-    libvlc_event_attach(eventManager, libvlc_MediaPlayerEndReached, vlcEventStatic,  this);
+        cout << "Video: (" << videoWidth << ", " << videoHeight << ") video_length_ms: "<<video_length_ms << endl;
 
-    input_item_t *it = m->p_input_item;
-    
-    for (int i = 0; i < it->i_es; i++) {
-        es_format_t *es = it->es[i];
-        if (es) {
-            if (es->video.i_frame_rate) {
-                fps = (float)es->video.i_frame_rate / es->video.i_frame_rate_base;
-                cout << "fps: " << fps << endl;
-            }
-            //cout << es->video.i_width << endl;
+        libvlc_video_set_callbacks(mp, lockForThumbnailStatic, unlockForThumbnailStatic, displayForThumbnailStatic, this);
+        libvlc_video_set_format(mp, "RGBA", videoWidth, videoHeight, videoWidth * 4);
+
+        thumbnailImage.allocate(videoWidth, videoHeight, OF_IMAGE_COLOR_ALPHA);
+
+        libvlc_media_player_play(mp);
+        while (!isThumbnailOK) {
+            ofSleepMillis(100);
         }
-    }
+        libvlc_media_player_stop(mp);
+        libvlc_media_player_set_position(mp, 0);
+        thumbnailImage.reloadTexture();
 
-    isVLCInitialized = true;
+        cout << "Created Thumbnail" << endl;
+        cout << "Video:length " << video_length_ms << "(ms)" << endl;
+
+        libvlc_audio_output_set(mp, "aout_directx");
+        libvlc_video_set_callbacks(mp, lockStatic, unlockStatic, displayStatic, this);
+        libvlc_video_set_format(mp, "RGBA", videoWidth, videoHeight, videoWidth * 4);
+        
+        //libvlc_audio_set_callbacks(mp, playStatic, pauseStatic, resumeStatic, flushStatic, drainStatic, this);
+        //libvlc_audio_set_format_callbacks(mp, setupStatic, cleanupStatic);
+
+        eventManager = libvlc_media_player_event_manager(mp);
+        libvlc_event_attach(eventManager, libvlc_MediaPlayerEndReached, vlcEventStatic,  this);
+
+        input_item_t *it = m->p_input_item;
+        
+        for (int i = 0; i < it->i_es; i++) {
+            es_format_t *es = it->es[i];
+            if (es) {
+              
+                //    if (es->video.i_frame_rate) {
+                  //      fps = (float)es->video.i_frame_rate / es->video.i_frame_rate_base;
+                    //    cout << "fps: " << fps << endl;
+                   // }
+                
+                //cout << es->video.i_width << endl;
+            }
+        }
+
+        
+       
+        
+    }
+    
+    
+     isVLCInitialized = true;
 }
+
+void VLCMovie::readMetaData(){
+    
+    
+    unsigned int num = 0;
+    unsigned int px=0;
+    unsigned int py=0;
+    libvlc_video_get_size(mp,num,&px,&py);
+    
+    //videoWidth = libvlc_video_get_width(mp);
+    //videoHeight = libvlc_video_get_height(mp);
+    
+    videoWidth = px;
+    videoHeight = py;
+    
+    
+   // videoWidth =1280;
+   // videoHeight = 528;
+    
+    //takes about 15 frames to load
+   // cout<<"VLCMovie::readMetaData videoWidth: "<<videoWidth<<endl;
+    
+    if(videoWidth>0){
+        
+        
+        
+        for (int i = 0; i < 2 ; i++) {
+            image[i].allocate(videoWidth, videoHeight, OF_IMAGE_COLOR_ALPHA);
+        }
+        
+        //frontTexture = &frontImage->getTextureReference();
+        
+        video_length_ms = libvlc_media_get_duration(m);
+        cout << video_length_ms << endl;
+        
+        cout << "Video: (" << videoWidth << ", " << videoHeight << ")" << endl;
+        
+        libvlc_video_set_callbacks(mp, lockForThumbnailStatic, unlockForThumbnailStatic, displayForThumbnailStatic, this);
+        libvlc_video_set_format(mp, "RGBA", videoWidth, videoHeight, videoWidth * 4);
+        
+        thumbnailImage.allocate(videoWidth, videoHeight, OF_IMAGE_COLOR_ALPHA);
+        
+        libvlc_media_player_play(mp);
+        while (!isThumbnailOK) {
+            ofSleepMillis(100);
+        }
+        libvlc_media_player_stop(mp);
+        libvlc_media_player_set_position(mp, 0);
+        thumbnailImage.reloadTexture();
+        
+        cout << "Created Thumbnail" << endl;
+        cout << "Video:length " << video_length_ms << "(ms)" << endl;
+        
+        libvlc_audio_output_set(mp, "aout_directx");
+        libvlc_video_set_callbacks(mp, lockStatic, unlockStatic, displayStatic, this);
+        libvlc_video_set_format(mp, "RGBA", videoWidth, videoHeight, videoWidth * 4);
+        
+        //libvlc_audio_set_callbacks(mp, playStatic, pauseStatic, resumeStatic, flushStatic, drainStatic, this);
+        //libvlc_audio_set_format_callbacks(mp, setupStatic, cleanupStatic);
+        
+        eventManager = libvlc_media_player_event_manager(mp);
+        libvlc_event_attach(eventManager, libvlc_MediaPlayerEndReached, vlcEventStatic,  this);
+        
+        input_item_t *it = m->p_input_item;
+        
+        for (int i = 0; i < it->i_es; i++) {
+            es_format_t *es = it->es[i];
+            if (es) {
+                
+                 //   if (es->video.i_frame_rate) {
+                   //   fps = (float)es->video.i_frame_rate / es->video.i_frame_rate_base;
+                   // cout << "fps: " << fps << endl;
+                 //}
+                
+                //cout << es->video.i_width << endl;
+            }
+        }
+        
+        
+
+        play();
+    }
+    
+
+
+};
 
 void VLCMovie::cleanupVLC() {
     libvlc_media_player_stop(mp);
@@ -287,7 +415,9 @@ unsigned int VLCMovie::getImageHeight() {
 }
 
 void VLCMovie::updateTexture() {
+    
     if (!isFliped) return;
+    
     imageFlipMutex.lock(10000);
     frontImage->update();
     frontTexture = &frontImage->getTextureReference();

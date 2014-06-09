@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>IDESourceControlProjectFavoriteDictionaryKey</key>
+	<false/>
+	<key>IDESourceControlProjectIdentifier</key>
+	<string>016BF55E-BF1A-4E1C-8D8E-7707052C6D28</string>
+	<key>IDESourceControlProjectName</key>
+	<string>VLCplayer</string>
+	<key>IDESourceControlProjectOriginsDictionary</key>
+	<dict>
+		<key>53D951C2-1559-45EA-9B6F-00825F6A8B13</key>
+		<string>https://github.com/borg/ofxVLCVideoPlayer.git</string>
+	</dict>
+	<key>IDESourceControlProjectPath</key>
+	<string>example_osx/VLCplayer.xcodeproj/project.xcworkspace</string>
+	<key>IDESourceControlProjectRelativeInstallPathDictionary</key>
+	<dict>
+		<key>53D951C2-1559-45EA-9B6F-00825F6A8B13</key>
+		<string>../../..</string>
+	</dict>
+	<key>IDESourceControlProjectURL</key>
+	<string>https://github.com/borg/ofxVLCVideoPlayer.git</string>
+	<key>IDESourceControlProjectVersion</key>
+	<integer>110</integer>
+	<key>IDESourceControlProjectWCCIdentifier</key>
+	<string>53D951C2-1559-45EA-9B6F-00825F6A8B13</string>
+	<key>IDESourceControlProjectWCConfigurations</key>
+	<array>
+		<dict>
+			<key>IDESourceControlRepositoryExtensionIdentifierKey</key>
+			<string>public.vcs.git</string>
+			<key>IDESourceControlWCCIdentifierKey</key>
+			<string>53D951C2-1559-45EA-9B6F-00825F6A8B13</string>
+			<key>IDESourceControlWCCName</key>
+			<string>ofxVLCVideoPlayer</string>
+		</dict>
+	</array>
+</dict>
+</plist>
